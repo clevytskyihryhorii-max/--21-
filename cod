@@ -1,0 +1,222 @@
+using System;
+using System.Collections.Generic;
+
+namespace ConnectLinesGame
+{
+    class Program
+    {
+        // Налаштування ігрового поля
+        static int size = 4;
+        static string[,] grid = new string[4, 4];
+        
+        // Позиція гравця
+        static int playerX = 0;
+        static int playerY = 0;
+        
+        // Механіка кроків та балів
+        static int movesLeft = 15;
+        static int score = 0;
+        
+        // Координати точок, які треба з'єднати (Пари чисел)
+        static int target1X = 0, target1Y = 3; // Перша одиниця
+        static int target2X = 3, target2Y = 0; // Друга одиниця
+        static bool isConnected = false;
+
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            InitializeGrid();
+
+            while (true)
+            {
+                Console.Clear();
+                DrawHeader();
+                DrawGrid();
+                
+                // Перевірка умов виграшу або програшу
+                if (isConnected)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("\nВітаємо! Ви успішно з'єднали лінії та перемогли!");
+                    Console.ResetColor();
+                    break;
+                }
+
+                if (movesLeft <= 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\nКроки закінчилися! Натисніть [M], щоб розв'язати рівняння і отримати кроки, або будь-яку іншу клавішу для виходу.");
+                    Console.ResetColor();
+                }
+
+                Console.WriteLine("\nКерування: [Стрілочки] - рух, [M] - Математичний бонус (додати кроків), [Q] - Вихід");
+                
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                if (keyInfo.Key == ConsoleKey.Q) break;
+                
+                if (keyInfo.Key == ConsoleKey.M)
+                {
+                    MathBonusChallenge();
+                    continue;
+                }
+
+                // Якщо кроків немає, рухатися не можна, поки не розв'яжеш рівняння
+                if (movesLeft > 0)
+                {
+                    HandleMovement(keyInfo);
+                }
+            }
+        }
+
+        // Ініціалізація поля
+        static void InitializeGrid()
+        {
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    grid[i, j] = ".";
+                }
+            }
+            // Ставимо цілі (одиниці, які треба з'єднати)
+            grid[target1X, target1Y] = "1";
+            grid[target2X, target2Y] = "1";
+        }
+
+        // Виведення інтерфейсу
+        static void DrawHeader()
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("========================================");
+            Console.WriteLine("       ГРА «З'ЄДНАЙ ЛІНІЇ» (+МАТЕМАТИКА) ");
+            Console.WriteLine("========================================");
+            Console.ResetColor();
+            Console.WriteLine($" Залишилось кроків: {movesLeft} | Рахунок: {score}");
+            Console.WriteLine("----------------------------------------");
+        }
+
+        // Малювання поля
+        static void DrawGrid()
+        {
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    if (i == playerY && j == playerX)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("[P] "); // Гравець (Player)
+                    }
+                    else if (grid[i, j] == "1")
+                    {
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.Write(" 1  "); // Цільові точки
+                    }
+                    else if (grid[i, j] == "X")
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write(" X  "); // Слід (лінія), яку залишає гравець
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.Write(" .  "); // Порожня клітинка
+                    }
+                    Console.ResetColor();
+                }
+                Console.WriteLine("\n");
+            }
+        }
+
+        // Обробка руху гравця
+        static void HandleMovement(ConsoleKeyInfo keyInfo)
+        {
+            int oldX = playerX;
+            int oldY = playerY;
+
+            switch (keyInfo.Key)
+            {
+                case ConsoleKey.UpArrow: if (playerY > 0) playerY--; break;
+                case ConsoleKey.DownArrow: if (playerY < size - 1) playerY++; break;
+                case ConsoleKey.LeftArrow: if (playerX > 0) playerX--; break;
+                case ConsoleKey.RightArrow: if (playerX < size - 1) playerX++; break;
+                default: return; // Якщо натиснуто іншу клавішу, крок не зараховується
+            }
+
+            // Якщо гравець реально змістився
+            if (oldX != playerX || oldY != playerY)
+            {
+                movesLeft--;
+
+                // Якщо ми стали на першу або другу цільову точку
+                if ((playerX == target1X && playerY == target1Y) || (playerX == target2X && playerY == target2Y))
+                {
+                    // Перевіряємо, чи ми пройшли шлях від однієї точки до іншої
+                    // Для простоти консольної версії: якщо ми знайшли дорогу до другої точки, залишаючи лінію — це перемога
+                    if (grid[oldY, oldX] == "X" || (oldX == target1X && oldY == target1Y))
+                    {
+                        isConnected = true;
+                    }
+                }
+                else
+                {
+                    // Залишаємо слід лінії
+                    grid[playerY, playerX] = "X";
+                }
+            }
+        }
+
+        // Математичний блок: генерація рівнянь для отримання кроків
+        static void MathBonusChallenge()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("=== МАТЕМАТИЧНИЙ БОНУС ===");
+            Console.ResetColor();
+            Console.WriteLine("Розв'яжіть рівняння, щоб отримати +5 кроків.\n");
+
+            Random rand = new Random();
+            int a = rand.Next(5, 20);
+            int b = rand.Next(5, 20);
+            int operation = rand.Next(0, 2); // 0 - додавання, 1 - віднімання
+            
+            int correctAnswer = 0;
+            string equationStr = "";
+
+            if (operation == 0)
+            {
+                correctAnswer = a + b;
+                equationStr = $"{a} + {b} = ?";
+            }
+            else
+            {
+                correctAnswer = a - b;
+                equationStr = $"{a} - {b} = ?";
+            }
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"Скільки буде: {equationStr}");
+            Console.ResetColor();
+            Console.Write("Ваша відповідь: ");
+
+            string input = Console.ReadLine();
+            int playerAnswer;
+
+            if (int.TryParse(input, out playerAnswer) && playerAnswer == correctAnswer)
+            {
+                movesLeft += 5;
+                score += 10;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\nПравильно! Ви отримали +5 кроків та 10 балів!");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\nНеправильно. Правильна відповідь: {correctAnswer}. Бонус не нараховано.");
+            }
+
+            Console.WriteLine("\nНатисніть будь-яку клавішу, щоб повернутися до гри...");
+            Console.ReadKey(true);
+        }
+    }
+}
